@@ -51,6 +51,11 @@ Eso lo vuelve una pieza útil para portfolio porque muestra una integración rea
 - ESLint
 - Web Serial API
 
+## Materiales Utilizados
+
+- ESP32
+- Módulo LoRa SX1278 RA-02
+
 ### Contexto de Redes e IoT
 
 La aplicación está pensada para trabajar con un dispositivo basado en ESP que expone por serial un firmware con soporte para LoRa. Desde el navegador, la app se conecta al puerto serie, envía comandos de control y procesa las respuestas del dispositivo para reflejar el estado del sistema en la UI.
@@ -61,6 +66,23 @@ El caso de uso principal es operar un nodo capaz de:
 - Transmitir mensajes por LoRa.
 - Reportar estados de entrega y reintentos.
 - Exponer información útil para debug y demostración.
+
+## Firmware del Nodo (`.ino`)
+
+El código del firmware que corre en el microcontrolador quedó incluido en el repositorio en:
+
+- `docs/firmware/final.ino`
+
+### Funcionamiento Breve del Firmware
+
+El sketch implementa un nodo LoRa sobre ESP32 con protocolo de chat y confirmación de entrega:
+
+- Inicializa el módulo SX1278 (RA-02) por SPI y aplica una configuración de radio por defecto.
+- Expone comandos por serial (`/cfg get`, `/cfg set`, `/sec get`, `/sec set`) para configurar alias, frecuencia, SF, ancho de banda, reintentos y modo de seguridad.
+- Cuando se envía un mensaje desde serial, lo encola como `MSG,<id>,<alias>,<payload>` y lo transmite por LoRa.
+- Si no llega `ACK`, reintenta automáticamente según `retries` y `retryMs`; si llega, marca el mensaje como entregado.
+- Cuando recibe un `MSG`, responde con `ACK`, evita duplicados y publica en serial la línea `RX: alias: mensaje`.
+- Soporta un modo opcional de cifrado simple XOR + Base64 (`ENC1:`) para pruebas.
 
 ### Protocolo Utilizado por la Interfaz
 
